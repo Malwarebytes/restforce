@@ -18,7 +18,7 @@ module Restforce
       private
 
       # Internal: Internal faraday connection where all requests go through
-      def connection
+      def connection(append_middleware = nil)
         @connection ||= Faraday.new(options[:instance_url],
                                     connection_options) do |builder|
           # Parses JSON into Hashie::Mash structures.
@@ -54,6 +54,8 @@ module Restforce
           builder.use      Restforce::Middleware::Logger,
                            Restforce.configuration.logger,
                            options if Restforce.log?
+
+          [*append_middleware].compact.each { |x| builder.use(x, self) }
 
           builder.adapter  adapter
         end

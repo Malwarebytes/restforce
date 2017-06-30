@@ -29,10 +29,17 @@ module Restforce
       #
       # Returns nil.
       def define_verb(verb)
-        define_method verb do |*args, &block|
+        define_method verb do |path, *args, &block|
           retries = options[:authentication_retries]
           begin
-            connection.send(verb, *args, &block)
+            if verb == :patch
+              uri = URI.parse(path)
+              uri.query = ['_HttpMethod=PATCH', uri.query].compact.join('&')
+              connection.post("#{uri}", *args, &block)
+            else
+              connection.send(verb, path, *args, &block)
+            end
+
           rescue Restforce::UnauthorizedError
             if retries > 0
               retries -= 1
